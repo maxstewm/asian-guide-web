@@ -1,0 +1,9 @@
+.git
+.env*  # 忽略所有 .env 文件
+node_modules
+npm-debug.log
+Dockerfile
+docker-compose.yml
+README.md
+命令
+# 其他你不想包含在镜像中的文件或目录
