@@ -10,3 +10,4 @@ auth/
 internal/
 ERROR.log*
 api_test.http
+.gitignore
