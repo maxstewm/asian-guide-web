@@ -5,6 +5,15 @@ const pool = require('../db');
 const authenticateToken = require('../middleware/auth'); // 保持不变
 const slugify = require('slugify');
 
+
+// ... 其他 require ...
+const { JSDOM } = require('jsdom'); // 引入 JSDOM
+const DOMPurify = require('dompurify'); // 引入 DOMPurify
+
+const window = new JSDOM('').window; // 创建一个 JSDOM window 对象
+const purify = DOMPurify(window); // 使用 JSDOM window 初始化 DOMPurify
+
+
 // --- Helper function to generate unique slugs ---
 async function generateUniqueSlug(title, attempt = 0) {
   let slug = slugify(title, { lower: true, strict: true });
@@ -38,6 +47,12 @@ router.post('/articles', authenticateToken, async (req, res) => {
     return res.status(400).json({ message: '标题、内容和国家不能为空' });
   }
 
+  const cleanContent = purify.sanitize(content, {
+    USE_PROFILES: { html: true }, // 允许基本的 HTML 标签
+    // FORBID_TAGS: ['style', 'script'], // 可以明确禁止某些危险标签（默认已禁止 script）
+    // FORBID_ATTR: ['onerror', 'onload'] // 禁止危险属性
+  });
+
   try {
     // 1. 根据 country_slug 查询 country_id
     const countryResult = await pool.query('SELECT id FROM countries WHERE slug = $1', [country_slug]);
@@ -55,7 +70,7 @@ router.post('/articles', authenticateToken, async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id, title, slug, created_at, cover_image_url, country_id, user_id;
     `;
-    const result = await pool.query(insertQuery, [userId, countryId, title, content, cover_image_url, slug]);
+    const result = await pool.query(insertQuery, [userId, countryId, title, cleanContent, cover_image_url, slug]);
 
     // 4. 返回成功响应，包含部分新文章信息
     res.status(201).json({ message: '文章已发布', article: result.rows[0] });
@@ -231,6 +246,15 @@ router.put('/articles/:id', authenticateToken, async (req, res) => {
    }
 
 
+   let cleanContent;
+   if (content !== undefined) {
+       // 如果传入了 content，则清理它
+       cleanContent = purify.sanitize(content, { USE_PROFILES: { html: true } });
+       updates.push(`content = $${paramIndex}`);
+       values.push(cleanContent); // 将清理后的内容加入更新列表
+       paramIndex++;
+   }
+
   const client = await pool.connect(); // 使用事务确保原子性
 
   try {
@@ -311,9 +335,9 @@ router.put('/articles/:id', authenticateToken, async (req, res) => {
     // updates.push(`updated_at = CURRENT_TIMESTAMP`); // 如果没有触发器，需要手动更新
 
     // 3. 执行更新
+    // 确保在执行更新时使用的是 cleanContent (如果 content 被更新的话)
     const updateQuery = `UPDATE articles SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
-    values.push(articleId); // 添加 ID 到参数列表末尾
-
+    values.push(articleId);
     const result = await client.query(updateQuery, values);
 
     await client.query('COMMIT'); // 提交事务

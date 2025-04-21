@@ -30,23 +30,37 @@ app.listen(PORT, () => {
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors'); // 假设你需要处理跨域
+// ... 其他 require ...
+const uploadRoutes = require('./routes/upload'); // 引入上传路由
 
 // 引入路由文件
 const authRoutes = require('./routes/auth');
-const articleRoutes = require('./routes/articles');
-const userRoutes = require('./routes/users');
+const articleRoutes = require('./routes/articles.js');
+const userRoutes = require('./routes/users'); // 引入用户路由
 
 dotenv.config(); // 加载环境变量
 const app = express();
 
+// --- 配置 CORS ---
+// 允许来自你前端开发服务器源的请求
+const corsOptions = {
+  origin: 'http://35.198.219.2:3001', // 明确指定允许的前端源
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // 允许的方法
+  allowedHeaders: ['Content-Type', 'Authorization'], // 允许的请求头
+  credentials: true, // 如果需要传递 cookie (JWT 通常不需要)
+  optionsSuccessStatus: 204 // 让 OPTIONS 预检请求返回 204 No Content
+};
+app.use(cors(corsOptions)); // <-- 在路由之前使用 cors 中间件并传入配置
+
 // 中间件
-app.use(cors()); // 允许跨域请求 (对于本地开发和分离的前后端很有用)
+//app.use(cors()); // 允许跨域请求 (对于本地开发和分离的前后端很有用)
 app.use(express.json());
 
 // --- 挂载路由 ---
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api', articleRoutes); // 注意: 像 /api/articles, /api/countries 会挂载在这里
+app.use('/api/upload', uploadRoutes); // <-- 挂载上传路由
 
 // 简单的根路径或 API 文档入口 (可选)
 app.get('/', (req, res) => {

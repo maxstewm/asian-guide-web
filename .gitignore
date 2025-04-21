@@ -1,13 +1,34 @@
+# Dependencies
 node_modules/
+**/node_modules/ # 忽略所有子目录下的 node_modules
+
+# Environment variables
 .env
-npm-debug.log*
+*.env
+**/.env
+**/*.env
+
+# Logs
+logs
 *.log
-Dockerfile
-docker-compose.yml
-README.md
-命令
-auth/
-internal/
-ERROR.log*
-api_test.http
-.gitignore
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+**/*-debug.log*
+**/*_error.log*
+
+# Optional diagnostic directories
+.cache
+.npm
+.yarn
+
+# Build outputs (adjust if necessary)
+build/
+dist/
+**/build/
+**/dist/
+
+# OS generated files
+.DS_Store
+Thumbs.db
