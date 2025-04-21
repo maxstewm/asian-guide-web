@@ -1,29 +1,56 @@
-/*const express = require('express');
-const app = express();
-const port = 3000;
-
-const pool = require('./db');
-const authRoutes = require('./routes/auth');
-const articleRoutes = require('./routes/articles');
-
-app.use(express.json()); // 接收 JSON 格式的 body
-app.use('/api/auth', authRoutes); // 掛載註冊接口
-app.use('/api', articleRoutes);
-
-
-app.get('/', (req, res) => {
-  res.send('Hello, World!');
-});
-
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
-*/
-
 // index.js
-const app = require('./app'); // 导入配置好的 app 实例
-const PORT = process.env.PORT || 3000;
+const app = require('./app'); // <-- 导入配置好的 app 实例
+const http = require('http'); // Node.js 内置的 http 模块
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+// 从环境变量获取端口，或使用默认值
+const port = process.env.PORT || 3000;
+app.set('port', port); // 将端口设置到 app 上 (可选，但有时有用)
+
+// 创建 HTTP 服务器
+const server = http.createServer(app);
+
+// 监听端口
+server.listen(port);
+
+// 服务器事件监听 (可选，增强健壮性)
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * HTTP 服务器 "error" 事件监听器。
+ */
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  const bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // 处理特定的监听错误
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * HTTP 服务器 "listening" 事件监听器。
+ */
+function onListening() {
+  const addr = server.address();
+  const bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  console.log('Listening on ' + bind);
+  // 可以替换掉 app.js 中的 console.log
+}
