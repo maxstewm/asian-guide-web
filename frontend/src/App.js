@@ -9,6 +9,7 @@ import ArticleDetailPage from './pages/ArticleDetailPage';
 import ArticleCreatePage from './pages/ArticleCreatePage'; // 这个页面会用到 ArticleForm
 import ArticleEditPage from './pages/ArticleEditPage';   // 这个页面也会用到 ArticleForm
 import Navbar from './components/common/Navbar'; // <-- 引入 Navbar
+import MyGuidesPage from './pages/MyGuidesPage'; // 确保引入了页面组件
 
 
 function App() {
@@ -31,7 +32,7 @@ function App() {
           {/* :slug 是一个动态参数，可以在 ArticleDetailPage 组件中通过 useParams() 获取 */}
           <Route path="/articles/:slug" element={<ArticleDetailPage />} /> {/* 文章详情页 */}
           <Route path="/articles/:slug/edit" element={<ArticleEditPage />} /> {/* 编辑文章页 */}    
-          
+          <Route path="/my-guides" element={<MyGuidesPage />} />
         </Routes>
       </div>
       {/* 在这里或布局组件中添加页脚 */}
