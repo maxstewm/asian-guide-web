@@ -44,6 +44,25 @@ const app = express();
 // --- 配置 CORS ---
 // 允许来自你前端开发服务器源的请求
 const corsOptions = {
+  // origin: 'http://35.198.219.2:3001', // 只允许你的前端来源
+  // 或者使用函数动态判断，或者允许一个列表
+  origin: function (origin, callback) {
+    // 在开发中，允许来自前端开发服务器的请求
+    // 生产环境中，你需要添加你的部署后的前端域名
+    const allowedOrigins = [
+        'http://35.198.219.2:3001', // 你的前端开发服务器
+        'http://localhost:3001',    // 可能的本地开发前端
+        // 'https://your-deployed-frontend.com' // 生产环境的前端域名
+    ];
+    // 允许没有 origin 的请求 (例如 Postman, curl)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+
+
   origin: 'http://35.198.219.2:3001', // 明确指定允许的前端源
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // 允许的方法
   allowedHeaders: ['Content-Type', 'Authorization'], // 允许的请求头

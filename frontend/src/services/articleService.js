@@ -76,8 +76,21 @@ getLatestArticles: async (limit = 10) => {
       console.error('Error fetching latest articles:', error.response?.data || error.message);
       throw error;
    }
-}
-
+},
+getMyArticles: async () => {
+  try {
+    console.log('Fetching my articles...'); // Log before request
+    const response = await api.get('/users/me/articles');
+    console.log('Received my articles response:', response.data); // Log the received data
+    // Ensure you are returning the correct part of the response
+    // If backend returns { articles: [...] }, then return response.data
+    // If backend returns just [...], then return response.data directly
+    return response.data; // Assuming backend returns { articles: [...] }
+  } catch (error) {
+    console.error('Error fetching my articles:', error.response?.data || error.message);
+    throw error;
+  }
+},
 
 };
 
