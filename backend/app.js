@@ -27,9 +27,10 @@ app.listen(PORT, () => {
 */
 
 // app.js
+const cors = require('cors'); // 假设你需要处理跨域
 const express = require('express');
 const dotenv = require('dotenv');
-const cors = require('cors'); // 假设你需要处理跨域
+
 // ... 其他 require ...
 const uploadRoutes = require('./routes/upload'); // 引入上传路由
 

@@ -13,60 +13,48 @@ const purify = DOMPurify(window);
 
 // --- 创建文章 (POST /api/articles) ---
 router.post('/articles', authenticateToken, async (req, res) => {
-  // 1. 获取并验证输入数据
-  const { title, content, country_slug, cover_image_url } = req.body;
-  const userId = req.user.id; // 从认证中间件获取用户 ID
+  // 从请求体获取数据，添加 main_image_url
+  const { title, content, country_slug, main_image_url, gallery_image_urls } = req.body; // <--- 添加 main_image_url
+  const userId = req.user.id;
 
-  if (!title || !content || !country_slug) {
-    return res.status(400).json({ message: 'Title, content, and country slug are required.' });
+  // 基本验证 (content 可以允许为空，如果需要的话)
+  if (!title || !country_slug) { // <--- 移除 content 的非空验证 (如果允许)
+    return res.status(400).json({ message: 'Title and country are required.' });
   }
 
-  // 2. 清理 HTML 内容防止 XSS
-  const cleanContent = purify.sanitize(content, {
-      USE_PROFILES: { html: true }, // 允许常用安全的 HTML 标签
-      // 可以根据需要添加更多配置，例如允许特定 class 或 target="_blank"
-      // ADD_ATTR: ['target'], // 示例：允许 target 属性
-  });
+  // 清理 HTML 内容 (如果 content 存在) - 对于纯文本 Textarea，可能不需要清理，或使用不同的清理策略
+  // 如果 content 确定是纯文本，可以跳过清理或只做基础处理
+  // const cleanContent = content ? purify.sanitize(content, { USE_PROFILES: { html: true } }) : null;
+  const cleanContent = content || ''; // 直接使用，因为是 textarea
 
   try {
-    // 3. 查询国家 ID
+    // 1. 根据 country_slug 查询 country_id (不变)
     const countryResult = await pool.query('SELECT id FROM countries WHERE slug = $1', [country_slug]);
     if (countryResult.rows.length === 0) {
       return res.status(400).json({ message: 'Invalid country identifier.' });
     }
     const countryId = countryResult.rows[0].id;
 
-    // 4. 生成唯一的 Slug
-    const slug = await generateUniqueSlug(title); // 使用工具函数
+    // 2. 生成唯一的 slug (不变)
+    const slug = await generateUniqueSlug(title); // 假设这个函数存在
 
-    // 5. 插入数据库
+    // 3. 插入文章数据到数据库，包含 main_image_url
     const insertQuery = `
-      INSERT INTO articles (user_id, country_id, title, content, cover_image_url, slug)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, title, slug, created_at, updated_at, cover_image_url, country_id, user_id, is_featured;
-    `;
-    const result = await pool.query(insertQuery, [userId, countryId, title, cleanContent, cover_image_url || null, slug]); // cover_image_url 可以为 null
+  INSERT INTO articles (user_id, country_id, title, content, main_image_url, slug, gallery_image_urls)
+  VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING ...;
+  `;// <--- 添加 main_image_url 列
+    // 注意：你需要在 articles 表中添加 main_image_url 字段 (VARCHAR 类型)
+    // ALTER TABLE articles ADD COLUMN main_image_url VARCHAR(512);
 
-    // 6. 返回成功响应
-    res.status(201).json({ message: 'Article published successfully.', article: result.rows[0] });
+    const result = await pool.query(insertQuery, [userId, countryId, title, cleanContent, main_image_url, slug, JSON.stringify(gallery_image_urls || [])]); // 转换为 JSON 字符串插入
+    res.status(201).json({ message: 'Article published successfully!', article: result.rows[0] });
 
   } catch (err) {
     console.error("Failed to publish article:", err);
-    // 检查特定数据库错误，例如唯一约束冲突
-    if (err.code === '23505' && err.constraint === 'articles_slug_key') { // 假设 slug 有唯一约束
-         return res.status(400).json({ message: 'Article title might already exist (resulting in duplicate slug). Try a different title.' });
+    if (err.code === '23505') {
+         return res.status(400).json({ message: 'Article title might already exist. Try a different title.' });
     }
-    // 检查外键约束错误等...
-    if (err.code === '23503') { // Foreign key violation
-        console.error("Foreign key violation:", err.constraint);
-        return res.status(400).json({ message: 'Invalid reference (e.g., user or country).' });
-    }
-    // 检查序列权限错误
-    if (err.code === '42501' && err.routine === 'nextval_internal') {
-        console.error("Sequence permission denied:", err.message); // 更详细的日志
-        return res.status(500).json({ message: 'Database permission error.' }); // 对用户隐藏具体细节
-    }
-    res.status(500).json({ message: 'Server error, failed to publish article.' });
+    res.status(500).json({ message: 'Server error, failed to publish.' });
   }
 });
 

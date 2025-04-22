@@ -10,17 +10,14 @@ function ArticleCreatePage() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const { isLoggedIn, isLoading: authLoading } = useAuth(); // <-- 从 Context 获取登录状态和加载状态
+  const { isLoggedIn, isLoading: authLoading, user } = useAuth(); // 获取登录状态和用户信息
 
-  // --- 检查登录状态 ---
   useEffect(() => {
-    // 只有在 AuthContext 加载完成且用户未登录时才跳转
     if (!authLoading && !isLoggedIn) {
-      alert("Please log in before creating an article!");
-      // 跳转到登录页，并传递当前页面路径，以便登录后跳回
+      alert("Please log in to publish a guide!");
       navigate('/login', { state: { from: { pathname: '/articles/new' } } });
     }
-  }, [isLoggedIn, authLoading, navigate]); // 依赖这些状态
+  }, [isLoggedIn, authLoading, navigate]);
 
   const handleCreateArticle = async (articleData) => {
     // 理论上到这里 isLoggedIn 应该是 true，但可以再加一层保险
@@ -34,30 +31,30 @@ function ArticleCreatePage() {
     setError(null);
     try {
       const newArticle = await articleService.createArticle(articleData);
-      alert('Article published successfully!');
+      alert('Guide published successfully!');
       navigate(`/articles/${newArticle.slug}`);
     } catch (error) {
-      setError('Failed to create article. Please check your input or try again later.');
+      setError('Failed to publish guide. Please check your input or try again later.');
       setIsSubmitting(false);
     }
   };
 
   // 如果 AuthContext 还在加载用户信息，可以显示加载状态
   if (authLoading) {
-      return <div>Loading user status...</div>;
+      return <div>Loading authentication status...</div>;
   }
 
   // 如果检查后确定未登录 (虽然 useEffect 会跳转，但可以防止瞬间渲染表单)
   if (!isLoggedIn) {
       // 理论上会被 useEffect 重定向，但可以返回 null 或提示信息
-      return <div>请先登录...</div>;
+      return <div>Redirecting to login...</div>;
   }
 
   // 确认登录后才渲染表单
   return (
-    <div className="article-create-page">
-      <h2>Create New Guide</h2>
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+    <div className="article-create-page" style={{ padding: '20px' }}> {/* 加点内边距 */}
+      <h2 style={{ textAlign: 'center', marginBottom: '30px' }}>Publish New Guide</h2>
+      {error && <p style={{ color: 'red', textAlign: 'center', marginBottom: '15px' }}>Error: {error}</p>}
       <ArticleForm onSubmit={handleCreateArticle} isSubmitting={isSubmitting} />
     </div>
   );
