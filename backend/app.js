@@ -9,6 +9,11 @@ const { generateUniqueSlug } = require('./utils/slug'); // <-- 确认 utils 目�
 const { JSDOM } = require('jsdom');
 const DOMPurify = require('dompurify');
 
+// --- 将初始化移到顶层 ---
+const window = new JSDOM('').window;
+const purify = DOMPurify(window);
+// --- 结束初始化 ---
+
 // --- 引入其他路由 ---
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -17,9 +22,6 @@ const uploadRoutes = require('./routes/upload'); // uploadRoutes 内部路径应
 dotenv.config();
 const app = express();
 
-// --- 初始化 DOMPurify ---
-const window = new JSDOM('').window;
-const purify = DOMPurify(window);
 
 // --- 全局中间件 ---
 const corsOptions = {
@@ -208,8 +210,7 @@ app.put('/api/articles/:id', authenticateToken, async (req, res) => {
 
   if (status && status !== 'draft' && status !== 'published') { return res.status(400).json({ message: 'Invalid status value.' }); }
 
-  const cleanContent = content !== undefined ? (content ? purify.sanitize(content, { USE_PROFILES: { html: true } }) : '') : undefined; // 处理空 content
-
+  const cleanContent = content !== undefined ? (content ? purify.sanitize(content, { USE_PROFILES: { html: true } }) : '') : undefined;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -243,11 +244,14 @@ app.put('/api/articles/:id', authenticateToken, async (req, res) => {
         } else { /* ... 警告或错误 ... */ }
     }
 
+    
+    
     if (status === 'published' && !currentSlug && title) {
         finalSlug = await generateUniqueSlug(title, client);
         updates.push(`slug = $${paramIndex++}`);
         values.push(finalSlug);
     }
+        
 
     if (updates.length === 0) { /* ... 400 No fields to update ... */ await client.query('ROLLBACK'); client.release(); return res.status(400).json({ message: 'No fields provided for update.' }); }
 

@@ -7,10 +7,9 @@ import RegisterPage from './pages/RegisterPage';
 import ArticleListPage from './pages/ArticleListPage';
 import ArticleDetailPage from './pages/ArticleDetailPage';
 import ArticleCreatePage from './pages/ArticleCreatePage'; // 这个页面会用到 ArticleForm
-import ArticleEditPage from './pages/ArticleEditPage';   // 这个页面也会用到 ArticleForm
 import Navbar from './components/common/Navbar'; // <-- 引入 Navbar
 import MyGuidesPage from './pages/MyGuidesPage'; // 确保引入了页面组件
-
+import ArticleEditPage from './pages/ArticleEditPage'; // 引入编辑页
 
 function App() {
   return (

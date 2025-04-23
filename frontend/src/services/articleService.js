@@ -11,6 +11,17 @@ const articleService = {
       throw error; // 重新抛出错误，让调用者处理
     }
   },
+  // --- 创建文章草稿 ---
+  createDraftArticle: async () => {
+    try {
+      // 调用 POST /api/articles/draft (需要登录)
+      const response = await api.post('/articles/draft');
+      return response.data; // 返回 { articleId: ... }
+    } catch (error) {
+      console.error('Error creating draft article:', error.response?.data || error.message);
+      throw error;
+    }
+  },
 
 
 
@@ -28,13 +39,42 @@ const articleService = {
     }
   },
 
-  updateArticle: async (id, articleData) => {
-     // ... 更新文章的 API 调用 ...
+  // --- 更新文章 (用于保存草稿和发布) ---
+  updateArticle: async (articleId, articleData) => {
+    // articleData 包含 { title, content, country_slug, status }
+    try {
+      // 调用 PUT /api/articles/:id (需要登录)
+      const response = await api.put(`/articles/${articleId}`, articleData);
+      return response.data; // 返回 { message: ..., slug: ... }
+    } catch (error) {
+      console.error(`Error updating article ${articleId}:`, error.response?.data || error.message);
+       // 将后端更具体的错误信息传递出去
+      throw new Error(error.response?.data?.message || 'Failed to update article.');
+    }
   },
 
-  deleteArticle: async (id) => {
-     // ... 删除文章的 API 调用 ...
+  // --- 删除已上传的图片 ---
+  deleteUploadedImage: async (imageId) => {
+    try {
+      // 调用 DELETE /api/upload/image/:imageId (需要登录)
+      const response = await api.delete(`/upload/image/${imageId}`);
+      return response.data; // 返回 { message: ... }
+    } catch (error) {
+      console.error(`Error deleting image ${imageId}:`, error.response?.data || error.message);
+      throw error;
+    }
   },
+
+  // --- 删除文章 (如果还没实现) ---
+  deleteArticle: async (id) => {
+    try {
+        const response = await api.delete(`/articles/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error deleting article ${id}:`, error.response?.data || error.message);
+        throw error;
+    }
+},
 
   getArticles: async (params = {}) => { // params 可以是 { page: 1, limit: 10, country: 'japan', featured: true }
      try {

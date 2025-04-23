@@ -196,20 +196,7 @@ box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     margin-right: 8px;
   }
   
-  /* 提交按钮 */
-  .submit-btn {
-    display: block; /* 独占一行 */
-    width: 100%;
-    padding: 12px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
+  
   
   .submit-btn:hover {
     background-color: #218838;
@@ -225,3 +212,137 @@ box-shadow: 0 1px 3px rgba(0,0,0,0.2);
       font-size: 0.9em;
       margin-top: 5px;
   }
+
+  /* 操作按钮区域 */
+.form-actions {
+  display: flex; /* 使用 Flexbox 布局 */
+  justify-content: flex-end; /* 按钮靠右对齐 */
+  gap: 10px; /* 按钮之间的间距 */
+  margin-top: 30px; /* 与上方元素的间距 */
+}
+
+.form-actions button {
+  width: auto; /* 让按钮宽度根据内容自适应 */
+  padding: 10px 20px; /* 调整按钮内边距 */
+  font-size: 1rem; /* 调整字体大小 */
+}
+
+.save-draft-btn {
+    background-color: #6c757d; /* 灰色 */
+}
+.save-draft-btn:hover {
+    background-color: #5a6268;
+}
+.publish-btn { /* 之前的 .submit-btn 样式可以用于这个 */
+    background-color: #28a745;
+}
+.publish-btn:hover {
+    background-color: #218838;
+}
+
+/* 禁用状态 */
+.form-actions button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* 调整国家列表下方间距 */
+.form-group-countries {
+    margin-bottom: 30px; /* 增加与按钮区域的距离 */
+}
+
+/* 类型单选按钮组 */
+.form-group-type label { /* 指的是 "Type:" 这个标签 */
+  margin-bottom: 10px;
+}
+.type-radio-group {
+display: flex;
+gap: 20px; /* 类型选项间距可以大一些 */
+padding: 10px;
+background-color: #fff;
+border: 1px solid #eee;
+border-radius: 4px;
+margin-bottom: 20px; /* 与国家选择的间距 */
+}
+
+.type-radio-label {
+display: flex;
+align-items: center;
+cursor: pointer;
+font-weight: normal;
+margin-bottom: 0;
+}
+
+.type-radio-label input[type="radio"] {
+margin-right: 8px;
+}
+
+
+/* 国家单选按钮组 (确保样式一致性) */
+.form-group-countries label { /* 指的是 "Country:" 这个标签 */
+  margin-bottom: 10px;
+}
+.country-radio-group {
+display: flex;
+flex-wrap: wrap;
+gap: 15px;
+padding: 10px;
+background-color: #fff;
+border: 1px solid #eee;
+border-radius: 4px;
+margin-bottom: 30px; /* 增加与按钮区域的距离 */
+}
+
+.country-radio-label {
+display: flex;
+align-items: center;
+cursor: pointer;
+font-weight: normal;
+margin-bottom: 0;
+}
+
+.country-radio-label input[type="radio"] {
+margin-right: 8px;
+}
+
+
+/* --- 修改按钮布局和样式 --- */
+.form-actions {
+display: flex;
+justify-content: flex-end; /* 按钮靠右 */
+gap: 15px; /* 按钮间距 */
+margin-top: 30px;
+}
+
+/* 通用操作按钮样式 */
+.action-btn {
+width: auto; /* 取消 width: 100% */
+padding: 10px 25px; /* 调整内边距 */
+font-size: 1rem;
+font-weight: bold;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+transition: background-color 0.2s ease;
+}
+
+.save-draft-btn {
+  background-color: #6c757d;
+  color: white;
+}
+.save-draft-btn:hover {
+  background-color: #5a6268;
+}
+.publish-btn {
+  background-color: #28a745;
+  color: white;
+}
+.publish-btn:hover {
+  background-color: #218838;
+}
+
+/* 禁用状态 */
+.action-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

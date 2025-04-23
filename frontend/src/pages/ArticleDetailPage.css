@@ -1,0 +1,221 @@
+/* frontend/src/pages/ArticleDetailPage.css */
+
+.article-detail-page {
+    max-width: 800px; /* 或者你喜欢的宽度 */
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .article-title {
+    font-size: 2.5em;
+    margin-bottom: 15px;
+    color: #333;
+    line-height: 1.2;
+  }
+  
+  .article-meta {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+  }
+  
+  .article-meta span {
+    margin-right: 10px;
+  }
+  
+  .article-meta a {
+      color: #007bff;
+      text-decoration: none;
+  }
+  .article-meta a:hover {
+      text-decoration: underline;
+  }
+  
+  
+  .article-main-image {
+    width: 100%;
+    max-height: 400px; /* 限制主图最大高度 */
+    object-fit: cover; /* 裁剪以适应 */
+    border-radius: 5px;
+    margin-bottom: 25px;
+  }
+  
+  .article-content {
+    line-height: 1.7;
+    font-size: 1.1em;
+    color: #444;
+    /* 考虑为 content 内的元素添加样式，例如 p, h1, h2, img */
+    white-space: pre-wrap; /* <-- 添加这一行 */
+    word-wrap: break-word; /* 确保长单词能换行 */
+  }
+  .article-content p {
+      margin-bottom: 1em;
+  }
+  .article-content img { /* 限制内容中图片的最大宽度 */
+      max-width: 100%;
+      height: auto;
+      display: block; /* 让图片独占一行，并方便设置边距 */
+      margin: 15px 0;
+      border-radius: 4px;
+  }   
+  
+  
+/* 画廊图片区域 */
+.article-images-section {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+  .article-images-section h3 {
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    color: #333;
+  }
+  /*
+  .article-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+    gap: 15px; 
+  }
+  */
+  
+  .article-image-item {
+    position: relative; /* <-- 设置相对定位，作为绝对定位子元素的基准 */
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .article-image-item img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px; /* 图片也加圆角 */
+  }
+
+  /* 图片编号样式 */
+.image-number-overlay {
+    position: absolute;  /* <-- 绝对定位 */
+    top: 8px;            /* <-- 距离顶部 8px */
+    right: 8px;          /* <-- 距离右侧 8px */
+    background-color: rgba(0, 0, 0, 0.6); /* 半透明黑色背景 */
+    color: white;         /* 白色文字 */
+    padding: 3px 8px;     /* 内边距 */
+    border-radius: 3px;   /* 圆角 */
+    font-size: 0.8em;     /* 稍小字号 */
+    font-weight: bold;
+    z-index: 1;           /* 确保在图片上方 */
+    pointer-events: none; /* 让鼠标事件穿透到图片 */
+  }
+  
+  .article-image-item img:hover {
+      transform: scale(1.03); /* 简单的悬停效果 */
+  }
+  
+  .article-main-image {
+    display: block; /* 确保是块级元素，便于控制宽度 */
+    width: 100%;    /* 图片宽度占满其容器的 100% */
+    max-width: 100%; /* 防止图片超过其原始尺寸或容器宽度 */
+    height: auto;   /* 高度自动按比例缩放 */
+    object-fit: cover; /* 可选：如果设置了固定高度，这个能保持比例并裁剪 */
+    /* max-height: 400px; */ /* 可以移除或保留最大高度限制 */
+    border-radius: 5px;
+    margin: 25px 0; /* 上下边距 */
+  }
+  
+  /* 文章内容中的图片样式 */
+  .article-content img {
+    display: block; /* 块级元素 */
+    max-width: 100%; /* 关键：图片最大宽度为其容器的 100% */
+    height: auto;   /* 高度自动 */
+    margin: 15px auto; /* 上下边距，左右自动居中（如果需要） */
+    border-radius: 4px;
+  }
+  
+  
+  .article-images-grid {
+    display: grid;
+    /* 关键：使用 auto-fill 和 minmax 实现响应式网格 */
+    /* 在小屏幕上会自动变成一列或两列 */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 最小列宽 150px */
+    gap: 10px;
+  }
+  
+  
+  /* 响应式调整 (示例：在较小屏幕上调整间距或网格) */
+  @media (max-width: 600px) {
+    .article-detail-page {
+      padding: 10px; /* 减小页面内边距 */
+    }
+    .article-title {
+      font-size: 2em; /* 减小标题字号 */
+    }
+    .article-images-grid {
+      /* 在小屏幕上可以强制显示更少的列，如果 minmax 不够用的话 */
+      /* grid-template-columns: repeat(2, 1fr); */
+      gap: 15px; /* 减小图片间距 */
+    }
+     .article-image-item img {
+        width: 100%; background-color: lightcoral; /* 调整小屏幕上的图片高度 */
+     }
+}
+  /* 操作按钮区域 */
+  .article-actions {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    text-align: right; /* 按钮靠右 */
+  }
+  
+  .action-button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 10px;
+    text-decoration: none; /* 用于 Link */
+    display: inline-block; /* 用于 Link */
+    color: white;
+  }
+  
+  .edit-button {
+    background-color: #007bff;
+  }
+  .edit-button:hover {
+    background-color: #0056b3;
+  }
+  
+  .delete-button {
+    background-color: #dc3545;
+  }
+  .delete-button:hover {
+    background-color: #c82333;
+  }
+  
+  /* 加载和错误消息 */
+  .loading-message, .error-message, .not-found-message {
+      text-align: center;
+      padding: 40px;
+      font-size: 1.2em;
+      color: #666;
+  }
+  .error-message {
+      color: red;
+  }
+
+  /* 移除按钮 (如果需要的话，重新定位) */
+/* 如果还想要移除按钮，需要重新考虑它的定位方式， */
+/* 放在图片下方或旁边可能更合适 */
+.remove-btn {
+    /* 需要重新设计样式和定位 */
+    display: block; /* 例如放在图片下方 */
+    margin: 5px auto; /* 居中 */
+    padding: 3px 8px;
+    /* ... 其他样式 ... */
+}

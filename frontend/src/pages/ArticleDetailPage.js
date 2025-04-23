@@ -1,18 +1,19 @@
 // frontend/src/pages/ArticleDetailPage.js
-import React, { useState, useEffect } from 'react'; // 假设未来会用 Context 获取用户信息
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import articleService from '../services/articleService';
-// import { AuthContext } from '../contexts/AuthContext'; // 假设有 AuthContext
-//import DOMPurify from 'dompurify'; // 用于前端再次清理 (可选，主要依赖后端)
+import './ArticleDetailPage.css'; // 引入页面专属 CSS
+import { useAuth } from '../contexts/AuthContext'; // <-- 添加这一行来导入 useAuth Hook
 
 function ArticleDetailPage() {
-  const [article, setArticle] = useState(null);
+  const [article, setArticle] = useState(null); // 包含文章信息和 images 数组
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // const { user: currentUser } = useContext(AuthContext); // 从 Context 获取当前登录用户
-  const currentUser = null; // 暂时模拟未登录或未实现 Context
-  const { slug } = useParams(); // 从 URL 获取文章 slug
+  // const { user: currentUser } = useContext(AuthContext);
+  //const currentUser = null; // 暂时模拟
+  const { slug } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth(); // <-- 使用 useAuth Hook 或 useContext(AuthContext) 获取用户
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -20,12 +21,13 @@ function ArticleDetailPage() {
       setError(null);
       try {
         const data = await articleService.getArticleBySlug(slug);
+        console.log("Fetched article data:", data); // 打印获取到的数据，确认 images 数组存在且有内容
         setArticle(data);
       } catch (err) {
         if (err.message === 'Article not found') {
-            setError('找不到这篇文章。');
+            setError('Article not found or not published yet.');
         } else {
-            setError('加载文章失败，请稍后再试。');
+            setError('Failed to load the article. Please try again later.');
         }
         console.error(err);
       } finally {
@@ -36,7 +38,7 @@ function ArticleDetailPage() {
     if (slug) {
       fetchArticle();
     }
-  }, [slug]); // 当 slug 变化时重新获取
+  }, [slug]);// 当 slug 变化时重新获取
 
   // --- 删除文章的处理函数 ---
   const handleDelete = async () => {
@@ -66,44 +68,83 @@ function ArticleDetailPage() {
     return { __html: htmlContent || '' }; // 确保有默认值
   };
 
-  // --- 渲染逻辑 ---
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div style={{ color: 'red' }}>错误: {error}</div>;
-  if (!article) return <div>找不到文章。</div>; // 如果没出错但文章是 null
+  // --- **在此处添加日志确认 currentUser 和 article.author_id** ---
+  useEffect(() => {
+    if (article && currentUser) {
+        console.log("Current User ID:", currentUser.id, typeof currentUser.id);
+        console.log("Article Author ID:", article.author_id, typeof article.author_id);
+        console.log("Is Author Check:", currentUser.id === article.author_id);
+    }
+}, [article, currentUser]); // 当文章数据或当前用户信息加载后打印
 
-  // 判断当前用户是否是作者
-  const isAuthor = currentUser && article && currentUser.id === article.author_id;
+// --- 渲染逻辑 ---
+if (loading) return <div className="loading-message">Loading article...</div>;
+if (error) return <div className="error-message">Error: {error}</div>;
+if (!article) return <div className="not-found-message">Article not found.</div>;
 
-  return (
-    <div className="article-detail">
-      <h1>{article.title}</h1>
-      <div className="article-meta">
-        <span>作者: {article.author_username || '未知'}</span> |
-        <span>国家: <Link to={`/articles/country/${article.country_slug}`}>{article.country_name || '未知'}</Link></span> |
-        <span>发布于: {new Date(article.created_at).toLocaleString()}</span>
-        {article.created_at !== article.updated_at && (
-            <span> | 更新于: {new Date(article.updated_at).toLocaleString()}</span>
-        )}
-      </div>
+const isAuthor = currentUser && article && currentUser.id === article.author_id;
+console.log("Calculated isAuthor:", isAuthor); // 打印计算结果
 
-      {article.cover_image_url && (
-        <img src={article.cover_image_url} alt={article.title} style={{ maxWidth: '100%', height: 'auto', margin: '20px 0' }} />
-      )}
+return (
+  <div className="article-detail-page">
+    {/* 文章标题 */}
+    <h1 className="article-title">{article.title}</h1>
 
-      {/* 渲染文章内容 */}
-      <div className="article-content" dangerouslySetInnerHTML={createMarkup(article.content)} />
-
-      {/* 编辑和删除按钮 (仅作者可见) */}
-      {isAuthor && (
-        <div className="article-actions" style={{ marginTop: '20px' }}>
-          <Link to={`/articles/${article.slug}/edit`} style={{ marginRight: '10px' }}>
-            <button>编辑文章</button>
-          </Link>
-          <button onClick={handleDelete} style={{ backgroundColor: 'red', color: 'white' }}>删除文章</button>
-        </div>
+    {/* 文章元数据 */}
+    <div className="article-meta">
+      <span>Author: {article.author_username || 'Unknown'}</span> |
+      <span>Country: <Link to={`/articles/country/${article.country_slug}`}>{article.country_name || 'Unknown'}</Link></span> |
+      <span>Type: {article.type === 'food' ? 'Food' : 'Travel'}</span> | {/* 显示类型 */}
+      <span>Published: {new Date(article.created_at).toLocaleString()}</span>
+      {article.created_at !== article.updated_at && (
+          <span> | Updated: {new Date(article.updated_at).toLocaleString()}</span>
       )}
     </div>
-  );
+
+    {/* 主图 (如果使用了 main_image_url 字段) */}
+    {article.main_image_url && (
+      <img src={article.main_image_url} alt={article.title} className="article-main-image" />
+    )}
+
+    {/* 文章文字内容 */}
+    <div className="article-content" dangerouslySetInnerHTML={{ __html: article.content || '' }} />
+
+    {/* --- 图片展示区域 --- */}
+    {/* 检查 article.images 是否存在且是一个包含元素的数组 */}
+    {article.images && article.images.length > 0 && (
+        <div className="article-images-section">
+          <h3>Gallery ({article.images.length} images)</h3> {/* 在标题处显示总数 */}
+          <div className="article-images-list">
+            {/* 遍历 images 数组，按顺序显示图片 */}
+            {article.images.map((image, index) => (
+              // --- **给每个图片项添加相对定位** ---
+              <div key={image.id || index} className="article-image-item">
+                <img
+                  src={image.image_url}
+                  alt={`${article.title} - Gallery picture ${index + 1}`}
+                  loading="lazy"
+                />
+                {/* --- **添加图片编号元素** --- */}
+                <div className="image-number-overlay">
+                  {index + 1} / {article.images.length}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+    {/* 编辑和删除按钮 (仅作者可见) */}
+    {isAuthor && (
+      <div className="article-actions" style={{ marginTop: '20px' }}>
+        <Link to={`/articles/${article.slug}/edit`} className="action-button edit-button">
+          Edit Guide
+        </Link>
+        <button onClick={handleDelete} className="action-button delete-button">Delete Guide</button>
+      </div>
+    )}
+  </div>
+);
 }
 
 export default ArticleDetailPage;
