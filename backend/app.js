@@ -203,6 +203,12 @@ app.put('/api/articles/:id', authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const { title, content, country_slug, status, main_image_url, gallery_image_urls , type} = req.body; // 读取可能更新的字段
 
+   // --- 添加内容长度检查 ---
+   const MAX_CONTENT_LENGTH = 5 * 1024 * 1024; // 示例：限制为 5MB (根据你的需求调整)
+   if (content && content.length > MAX_CONTENT_LENGTH) {
+       console.warn(`Content length (${content.length} bytes) exceeds limit for article ${articleId}`);
+       return res.status(400).json({ message: `Content exceeds maximum allowed length of ${MAX_CONTENT_LENGTH} bytes.` });
+   }
   // 验证 type 值 (可选但推荐)
   if (type && type !== 'travel' && type !== 'food') {
     return res.status(400).json({ message: 'Invalid type value. Must be "travel" or "food".' });

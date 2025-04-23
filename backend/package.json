@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js",
+
+  "dev": "nodemon --max-old-space-size=2048 index.js",
+
+  "start": "node --max-old-space-size=2048 index.js",
+
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
