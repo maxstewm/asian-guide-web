@@ -1,0 +1,24 @@
+/* frontend/src/pages/ArticleListPage.css */
+
+.article-grid {
+    display: grid;
+    /* --- 响应式网格列 --- */
+    /* 在大屏幕上显示 3 列，中等屏幕 2 列，小屏幕 1 列 */
+    grid-template-columns: repeat(3, 1fr); /* 默认 3 列 */
+    gap: 20px; /* 卡片之间的间距 */
+    padding: 10px 0; /* 上下内边距 */
+  }
+  
+  /* --- 媒体查询调整列数 --- */
+  @media (max-width: 992px) { /* 中等屏幕 (例如平板) */
+    .article-grid {
+      grid-template-columns: repeat(2, 1fr); /* 变为 2 列 */
+    }
+  }
+  
+  @media (max-width: 600px) { /* 小屏幕 (例如手机) */
+    .article-grid {
+      grid-template-columns: 1fr; /* 变为 1 列 */
+      gap: 15px; /* 减小间距 */
+    }
+  }

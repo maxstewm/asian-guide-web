@@ -31,13 +31,16 @@ const corsOptions = {
         'http://localhost:3001',    // 本地开发前端
         // 添加你生产环境的前端域名 'https://your-deployed-frontend.com'
     ];
+    console.log('CORS check: Request origin:', origin); // <-- 添加日志！
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      console.log('CORS check: Allowed.'); // <-- 添加日志！
       callback(null, true);
     } else {
+      console.log('CORS check: Blocked.'); // <-- 添加日志！
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // 确保包含 OPTIONS
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 204
@@ -118,13 +121,14 @@ app.get('/api/articles', async (req, res) => {
   console.log('--- Count Query ---'); /* ... logging ... */
 
   try {
+    console.log("Executing Promise.all for queries...")
     const [articlesResult, countResult] = await Promise.all([
       pool.query(articlesQuery, queryParams),
       pool.query(countQuery, countQueryParams)
     ]);
     const totalArticles = parseInt(countResult.rows[0].count, 10);
     const totalPages = Math.ceil(totalArticles / limitNum);
-
+    console.log("Promise.all completed. Articles:", articlesResult.rows.length, "Count:", countResult.rows[0].count);
     // 返回 200 OK，即使 articles 数组为空
     res.json({
       articles: articlesResult.rows,

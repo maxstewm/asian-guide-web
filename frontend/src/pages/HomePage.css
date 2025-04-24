@@ -1,0 +1,81 @@
+/* frontend/src/pages/HomePage.css */
+
+.home-page {
+    /* 页面整体样式 */
+}
+
+.hero-section {
+    text-align: center;
+    padding: 40px 20px;
+    background-color: #eef4f8; /* 浅蓝色背景 */
+    margin-bottom: 30px;
+    border-radius: 5px;
+}
+
+.hero-section h1 {
+    font-size: 2.8em;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.hero-section p {
+    font-size: 1.2em;
+    color: #555;
+}
+
+.featured-articles-section {
+    margin-bottom: 30px;
+}
+
+.featured-articles-section h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 2em;
+    color: #444;
+}
+
+/* --- 复用或定义文章网格布局 --- */
+/* 如果想和列表页一样，可以省略，并引入 ArticleListPage.css */
+/* 如果想不同，例如首页最多显示两列 */
+.article-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 默认还是 3 列 */
+  gap: 20px;
+  padding: 10px 0;
+}
+@media (max-width: 992px) {
+  .article-grid {
+    grid-template-columns: repeat(2, 1fr); /* 中屏幕 2 列 */
+  }
+}
+@media (max-width: 600px) {
+  .article-grid {
+    grid-template-columns: 1fr; /* 小屏幕 1 列 */
+    gap: 15px;
+  }
+}
+/* --- 结束网格布局 --- */
+
+
+.view-all-link {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.view-all-link a {
+    display: inline-block;
+    padding: 10px 25px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+}
+.view-all-link a:hover {
+    background-color: #0056b3;
+}
+
+/* 可以添加国家链接区域的样式 */
+.country-links-section {
+    /* ... */
+}
