@@ -88,112 +88,190 @@ router.post('/image/:articleId', authenticateToken, upload.single('imageFile'), 
   });
 
   stream.on('finish', async () => {
-    if (gcsError) { // 如果 stream 过程中出错
-      return res.status(500).json({ message: 'Image upload failed during GCS transfer.' });
-  }
-    // 文件上传完成
-    // 如果你的 Bucket 设置了统一访问控制，并且对 allUsers 开放了读取权限，
-    // 那么公开 URL 就是 https://storage.googleapis.com/BUCKET_NAME/FILE_NAME
-    // 4. 上传成功，获取公开 URL
+    if (gcsError) {
+        client.release(); // 释放连接
+        return res.status(500).json({ message: 'Image upload failed during GCS transfer.' });
+    }
+
     const publicUrl = `https://storage.googleapis.com/${bucketName}/${gcsFileName}`;
     console.log(`图片上传成功 (article: ${articleId}): ${publicUrl}`);
-    // 返回图片的公开 URL
-    //res.json({ imageUrl: publicUrl });
-    // 5. 将图片信息写入数据库 article_images
+    
+    let dbClient; // <--- 在回调内部定义一个新的 client 变量
+    // --- 数据库操作：插入图片记录并可能更新主图 URL ---
     try {
-      // 获取当前图片数量作为顺序 (简单方式，可能有并发问题，更可靠是查 MAX(upload_order)+1)
-      const orderResult = await pool.query('SELECT COUNT(*) as count FROM article_images WHERE article_id = $1', [articleId]);
-      const uploadOrder = parseInt(orderResult.rows[0].count, 10);
+      dbClient = await pool.connect(); // <-- 在回调内部获取连接
+      await dbClient.query('BEGIN'); // 开始事务
 
-      const insertQuery = `
-      INSERT INTO article_images (article_id, image_url, upload_order)
-      VALUES ($1, $2, $3)
-      RETURNING id, image_url; -- 返回插入的图片信息
+      // 5.1 检查这篇文章是否已经有关联图片
+      const imageCountResult = await dbClient.query('SELECT COUNT(*) as count FROM article_images WHERE article_id = $1', [articleId]);
+      const existingImageCount = parseInt(imageCountResult.rows[0].count, 10);
+      const isFirstImage = existingImageCount === 0; // 判断这是否是第一张图
+
+      // 5.2 插入新的图片记录到 article_images
+      // 使用 existingImageCount 作为简单的顺序值
+      const uploadOrder = existingImageCount;
+      const insertImageQuery = `
+        INSERT INTO article_images (article_id, image_url, upload_order)
+        VALUES ($1, $2, $3)
+        RETURNING id, image_url;
       `;
-      const insertResult = await pool.query(insertQuery, [articleId, publicUrl, uploadOrder]);
+      const insertResult = await dbClient.query(insertImageQuery, [articleId, publicUrl, uploadOrder]);
+      const savedImage = insertResult.rows[0];
+      console.log(`Image metadata saved to article_images. ID: ${savedImage.id}`);
 
-      // 返回成功信息和插入的图片数据 (包含 id 和 url)
+      // 5.3 如果是第一张图片，则更新 articles 表的 main_image_url
+      if (isFirstImage) {
+        const updateArticleQuery = `
+          UPDATE articles SET main_image_url = $1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $2;
+        `;
+        await dbClient.query(updateArticleQuery, [publicUrl, articleId]);
+        console.log(`Article ${articleId} main_image_url updated to ${publicUrl}`);
+      }
+
+      await dbClient.query('COMMIT'); // 提交事务
+
       res.json({
           message: 'Image uploaded and saved successfully!',
-          image: insertResult.rows[0]
+          image: savedImage // 返回保存的图片信息
       });
 
-  } catch (dbError) {
- console.error(`保存图片信息到数据库失败 (article: ${articleId}):`, dbError);
-            // 这里需要考虑如何处理：GCS 上传成功但数据库失败。可以尝试删除 GCS 文件，或者只返回错误。
-            // 为了简单，暂时只返回错误
-            res.status(500).json({ message: 'Image uploaded but failed to save metadata.' });
-        }
-    });
+    } catch (dbError) {
+      await dbClient.query('ROLLBACK'); // 数据库操作出错，回滚事务
+      console.error(`保存图片信息或更新主图失败 (article: ${articleId}):`, dbError);
+      // 尝试删除已上传的 GCS 文件 (Best effort)
+      try {
+          await file.delete();
+          console.log(`Rolled back GCS upload for ${gcsFileName}`);
+      } catch (gcsDeleteError) {
+           console.error(`Failed to delete GCS object ${gcsFileName} after DB error:`, gcsDeleteError);
+      }
+      res.status(500).json({ message: 'Image uploaded but failed to save metadata or update main image.' });
+    } finally {
+      if (dbClient) dbClient.release(); // <--- 释放 dbClient
+    }
+  }); // end stream.on('finish')
 
-    // 写入 stream
-    stream.end(req.file.buffer);
+  // 写入 stream (不变)
+  stream.end(req.file.buffer);
 
-  } catch (err) { // 捕获 try 块的顶层错误 (如权限检查失败)
-      console.error(`图片上传处理失败 (article: ${articleId}):`, err);
-      res.status(500).json({ message: 'Image upload processing failed.' });
-  }
+} catch (err) { // 捕获顶层错误 (例如权限检查)
+    console.error(`图片上传处理失败 (article: ${articleId}):`, err);
+    //client.release(); // 确保释放连接
+    res.status(500).json({ message: 'Image upload processing failed.' });
+}
 });
 
 // --- (可选) 删除图片的 API ---
 // DELETE /api/upload/image/:imageId
 router.delete('/image/:imageId', authenticateToken, async (req, res) => {
-  //router.delete('/image/:imageId(\\d+)', authenticateToken, async (req, res) => {
   const idParam = req.params.imageId;
   const imageId = parseInt(idParam, 10);
   // --- 手动验证 ID ---
   if (isNaN(imageId) || String(imageId) !== idParam) {
-        return res.status(400).json({ message: 'Invalid image ID format in URL. Must be an integer.' });
+       return res.status(400).json({ message: 'Invalid image ID format. Must be an integer.' });
   }
 
   const userId = req.user.id;
-  const client = await pool.connect();
+  const client = await pool.connect(); // 获取连接
   try {
       await client.query('BEGIN');
-      // 1. 查询图片信息，并验证用户权限 (通过关联的文章)
+      // 1. 查询图片信息和权限
       const imageQuery = `
-          SELECT ai.image_url, a.user_id
+          SELECT ai.image_url, ai.article_id, a.user_id, a.main_image_url
           FROM article_images ai
           JOIN articles a ON ai.article_id = a.id
           WHERE ai.id = $1;
       `;
       const imageResult = await client.query(imageQuery, [imageId]);
-      if (imageResult.rows.length === 0) { /* ... 404 ... */ }
-      if (imageResult.rows[0].user_id !== userId) { /* ... 403 ... */ }
-
-      const imageUrl = imageResult.rows[0].image_url;
-
-      // 2. 从数据库删除记录
-      await client.query('DELETE FROM article_images WHERE id = $1', [imageId]);
-
-      // 3. 从 GCS 删除文件 (从 URL 中解析出文件名)
-      try {
-          const urlParts = new URL(imageUrl);
-          const gcsFileName = urlParts.pathname.substring(1).split('/').slice(1).join('/'); // 移除 /bucket-name/
-          if (gcsFileName) {
-              console.log(`Attempting to delete GCS object: ${gcsFileName}`);
-              await storage.bucket(bucketName).file(gcsFileName).delete();
-              console.log(`GCS object deleted: ${gcsFileName}`);
-          }
-      } catch (gcsDeleteError) {
-          // 如果 GCS 删除失败，可以选择回滚数据库或记录错误
-          console.error(`Failed to delete GCS object ${imageUrl}:`, gcsDeleteError);
-          // 可以选择不回滚，让数据库记录被删除，即使 GCS 文件还在
-          // await client.query('ROLLBACK');
-          // return res.status(500).json({ message: 'Failed to delete image from storage.' });
+      if (imageResult.rows.length === 0) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(404).json({ message: 'Image not found.' });
+      }
+      const imageData = imageResult.rows[0];
+      if (imageData.user_id !== userId) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(403).json({ message: 'Permission denied to delete this image.' });
       }
 
-      await client.query('COMMIT');
-      res.json({ message: 'Image deleted successfully.' });
+      const { image_url: imageUrlToDelete, article_id: articleId, main_image_url: currentMainImageUrl } = imageData;
 
-  } catch (err) {
-      await client.query('ROLLBACK');
-      console.error(`Failed to delete image ${imageId}:`, err);
-      res.status(500).json({ message: 'Failed to delete image.' });
-  } finally {
-      client.release();
-  }
+      // 2. 从数据库删除图片记录
+      await client.query('DELETE FROM article_images WHERE id = $1', [imageId]);
+      console.log(`Deleted image record ${imageId} from database for article ${articleId}.`);
+
+      // 3. 从 GCS 删除文件
+      let gcsFileName = null;
+      try {
+        const urlParts = new URL(imageUrlToDelete);
+          // 修正 GCS 文件名解析 (移除第一个 /)
+          gcsFileName = urlParts.pathname.startsWith('/') ? urlParts.pathname.substring(1) : urlParts.pathname;
+          // 再次分割并移除 bucket name
+          gcsFileName = gcsFileName.split('/').slice(1).join('/');
+
+          if (gcsFileName && bucketName) {// 确保有 bucketName
+              console.log(`Attempting to delete GCS object: ${gcsFileName} in bucket ${bucketName}`);
+              await storage.bucket(bucketName).file(gcsFileName).delete();
+              console.log(`GCS object deleted: ${gcsFileName}`);
+          } else {
+              console.warn("Could not determine GCS file name from URL or bucket name missing.");
+          }
+      } catch (gcsDeleteError) {
+        console.error(`Failed to delete GCS object ${imageUrlToDelete}:`, gcsDeleteError);
+          // 根据策略决定是否回滚
+          // await client.query('ROLLBACK');
+          // client.release();
+          // return res.status(500).json({ message: 'Failed to delete image from storage, database changes rolled back.' });
+      }
+
+      // 4. 检查是否删除了主图
+      let newMainImageUrl = currentMainImageUrl; // 先假设主图不变
+      if (imageUrlToDelete === currentMainImageUrl) { // 如果删除的是当前主图
+        console.log(`Image ${imageId} was the main image for article ${articleId}. Finding replacement...`);
+        // 需要从剩下的图片中选择一张作为新的主图
+        // 策略：选择剩下图片中 order 最小（或上传最早）的一张
+        const nextImageQuery = `
+            SELECT image_url
+            FROM article_images
+            WHERE article_id = $1
+            ORDER BY upload_order ASC, uploaded_at ASC -- 优先按指定顺序，其次按上传时间
+            LIMIT 1;
+        `;
+        const nextImageResult = await client.query(nextImageQuery, [articleId]);
+
+        if (nextImageResult.rows.length > 0) {
+            // 找到了替代的主图
+            newMainImageUrl = nextImageResult.rows[0].image_url;
+            console.log(`Found replacement main image: ${newMainImageUrl}`);
+        } else {
+            // 没有其他图片了，主图设为 NULL
+            newMainImageUrl = null;
+            console.log("No remaining images found, setting main_image_url to NULL.");
+        }
+
+        // 执行更新 articles 表的操作
+        await client.query(
+            'UPDATE articles SET main_image_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [newMainImageUrl, articleId]
+        );
+        console.log(`Article ${articleId} main_image_url updated to: ${newMainImageUrl}`);
+    } else {
+        console.log(`Deleted image ${imageId} was not the main image. Main image remains: ${currentMainImageUrl}`);
+    }
+    // --- 结束主图更新逻辑 ---
+
+    await client.query('COMMIT'); // 提交事务
+    res.json({ message: 'Image deleted successfully.', newMainImageUrl: newMainImageUrl }); // 可以选择性返回新的主图URL
+
+} catch (err) {
+    await client.query('ROLLBACK');
+    console.error(`Failed to delete image ${imageId}:`, err);
+    res.status(500).json({ message: 'Failed to delete image.' });
+} finally {
+    client.release();
+}
 });
 
-
-module.exports = router;
+module.exports = router; // 或在 app.js 中定义 app.delete(...)

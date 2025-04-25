@@ -39,19 +39,35 @@
 /* 如果想不同，例如首页最多显示两列 */
 .article-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 默认还是 3 列 */
-  gap: 20px;
-  padding: 10px 0;
+  grid-template-columns: repeat(6, 1fr); /* 默认尝试显示 6 列 */
+  gap: 15px;
+  align-items: stretch; /* 让卡片高度一致 (如果内容不同) */
 }
-@media (max-width: 992px) {
+@media (max-width: 1200px) { /* 例如，屏幕稍窄时显示 4 列 */
   .article-grid {
-    grid-template-columns: repeat(2, 1fr); /* 中屏幕 2 列 */
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
   }
 }
-@media (max-width: 600px) {
+
+@media (max-width: 992px) { /* 中等屏幕显示 3 列 */
   .article-grid {
-    grid-template-columns: 1fr; /* 小屏幕 1 列 */
-    gap: 15px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) { /* 更小的屏幕显示 2 列 */
+   .article-grid {
+     grid-template-columns: repeat(2, 1fr);
+     gap: 12px;
+   }
+ }
+
+
+@media (max-width: 500px) { /* 手机等小屏幕显示 1 列 */
+  .article-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 }
 /* --- 结束网格布局 --- */
@@ -75,7 +91,68 @@
     background-color: #0056b3;
 }
 
-/* 可以添加国家链接区域的样式 */
-.country-links-section {
-    /* ... */
+/* --- 国家导航/频道区域样式 --- */
+.country-channel-section {
+  text-align: center; /* 居中标题和导航 */
+  margin: 40px 0; /* 上下边距 */
+  padding: 20px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  background-color: #fafafa; /* 浅灰色背景 */
 }
+
+.country-channel-section h2 {
+  margin-bottom: 20px;
+  font-size: 1.8em;
+  color: #333;
+}
+
+.country-nav {
+  display: flex;
+  justify-content: center; /* 居中链接 */
+  flex-wrap: wrap; /* 允许换行 */
+  gap: 15px 25px; /* 垂直和水平间距 */
+}
+
+.country-link {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 1.1em;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.country-link:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+/* --- 最新文章区域 --- */
+.latest-articles-section {
+  margin-bottom: 30px;
+}
+
+.latest-articles-section h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 2em;
+  color: #444;
+}
+
+/* --- 文章网格布局 (复用 ArticleListPage.css 或在这里定义) --- */
+.article-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* 调整 minmax 适应首页 */
+  gap: 20px;
+  padding: 10px 0;
+  align-items: start; /* 或者移除 */
+}
+/* 首页可能希望默认列数少一点？ */
+@media (min-width: 992px) {
+.article-grid {
+   /* 在大屏幕上最多显示 5 列 */
+   grid-template-columns: repeat(5, 1fr); 
+}
+}
+

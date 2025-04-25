@@ -1,24 +1,154 @@
 /* frontend/src/pages/ArticleListPage.css */
 
+.article-list-page {
+  /* 页面整体样式 */
+}
+
 .article-grid {
-    display: grid;
-    /* --- 响应式网格列 --- */
-    /* 在大屏幕上显示 3 列，中等屏幕 2 列，小屏幕 1 列 */
-    grid-template-columns: repeat(3, 1fr); /* 默认 3 列 */
-    gap: 20px; /* 卡片之间的间距 */
-    padding: 10px 0; /* 上下内边距 */
+  display: grid;
+  /* --- 尝试使用 auto-fill 和更小的 minmax --- */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* 每列最小 180px，尝试放下更多列 */
+  /* 或者，如果你想强制 6 列 */
+  /* grid-template-columns: repeat(6, 1fr); */
+  gap: 8px; /* 卡片间距 */
+  padding: 10px 0;
+  /*align-items: stretch;*/
+  align-items: left; /* 让卡片顶部对齐，高度自适应 */
+}
+
+/* --- 媒体查询可能需要调整或移除 (如果用 auto-fill) --- */
+@media (max-width: 1200px) {
+  .article-grid {
+    /* grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); */ /* 屏幕变窄时减小最小宽度 */
+    grid-template-columns: repeat(6, 1fr); /* 或者固定列数 */
   }
-  
-  /* --- 媒体查询调整列数 --- */
-  @media (max-width: 992px) { /* 中等屏幕 (例如平板) */
-    .article-grid {
-      grid-template-columns: repeat(2, 1fr); /* 变为 2 列 */
-    }
+}
+ @media (max-width: 992px) {
+   .article-grid {
+     grid-template-columns: repeat(4, 1fr);
+   }
+ }
+ @media (max-width: 768px) {
+   .article-grid {
+     grid-template-columns: repeat(2, 1fr);
+   }
+ }
+
+
+ .article-columns { /* 使用新的类名 */
+  /* 定义列数和间隙 */
+  column-count: 5; /* 默认 3 列 */
+  column-gap: 10px;
+  padding: 10px 0;
+}
+
+.article-columns > .article-card { /* 选择卡片 */
+  display: inline-block; /* 让卡片像文字一样流动 */
+  width: 100%; /* 卡片宽度占满列宽 */
+  margin-bottom: 10px; /* 卡片之间的垂直间距 */
+  /* 防止卡片跨列断开 (可能不完全生效) */
+  break-inside: avoid;
+  page-break-inside: avoid;
+  box-sizing: border-box; /* 确保 padding/border 在宽度内 */
+}
+
+/* --- 媒体查询调整列数 --- */
+/* 断点需要根据 5 列布局重新考虑 */
+@media (max-width: 1400px) { /* 屏幕稍窄时 4 列 */
+  .article-columns {
+    column-count: 4;
   }
-  
-  @media (max-width: 600px) { /* 小屏幕 (例如手机) */
-    .article-grid {
-      grid-template-columns: 1fr; /* 变为 1 列 */
-      gap: 15px; /* 减小间距 */
-    }
+}
+@media (max-width: 1100px) { /* 再窄一些 3 列 */
+  .article-columns {
+    column-count: 3;
   }
+}
+@media (max-width: 768px) { /* 平板等 2 列 */
+  .article-columns {
+    column-count: 2;
+    column-gap: 15px; /* 可以减小间距 */
+  }
+   .article-columns > .article-card {
+       margin-bottom: 15px;
+   }
+}
+
+
+/* --- 列表页的国家导航样式 --- */
+.country-nav-listpage {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px 20px; /* 调整间距 */
+  padding: 15px 0;
+  margin-bottom: 25px;
+  border-bottom: 1px solid #ddd;
+}
+
+.country-link-listpage {
+  text-decoration: none;
+  color: #333; /* 默认颜色 */
+  font-size: 1em;
+  padding: 8px 15px; /* 按钮化内边距 */
+  border: 1px solid #ccc; /* 默认边框 */
+  border-radius: 20px; /* 胶囊形状 */
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.country-link-listpage:hover {
+  background-color: #f0f0f0;
+  border-color: #bbb;
+}
+
+/* 当前选中/激活的国家链接样式 */
+.country-link-listpage.active {
+  background-color: #007bff; /* 主题蓝色 */
+  color: white;
+  border-color: #007bff;
+  font-weight: bold;
+}
+
+/* 列表页标题 */
+.list-page-title {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 1.8em;
+  color: #444;
+}
+
+
+/* --- 分页控件样式 --- */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.pagination-controls button {
+  padding: 8px 15px;
+  margin: 0 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.pagination-controls button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.pagination-controls span {
+  font-size: 0.9em;
+  color: #555;
+}

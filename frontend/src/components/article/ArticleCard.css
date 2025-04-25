@@ -1,126 +1,123 @@
 /* frontend/src/components/article/ArticleCard.css */
+/* frontend/src/components/article/ArticleCard.css */
 
 .article-card {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    overflow: hidden; /* 隐藏溢出的内容，特别是圆角 */
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    display: flex; /* 使用 Flexbox 保证内容一致性 */
-    flex-direction: column; /* 垂直排列 */
-  }
+  background-color: #fff;
+  border-radius: 8px; /* 卡片整体圆角 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* 重要：隐藏内部溢出，确保圆角效果 */
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  /* 设定一个最小高度，防止内容过少时变形 (可选) */
+  min-height: 300px; /* 需要根据内容和图片比例调整 */
+}
+
+.article-card:hover {
+  transform: translateY(-3px); /* 悬停时轻微上移 */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.card-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* --- 图片区域：实现 2:3 宽高比和圆角 --- */
+.card-image-container {
+  width: 100%;
+  overflow: hidden; /* 配合图片的圆角 */
+  background-color: #f0f0f0;
+
+  /* 使用 aspect-ratio 实现 2:3 */
+  aspect-ratio: 2 / 3; /* 宽度是 2 份，高度是 3 份 */
+
+  /* 如果需要兼容旧浏览器，使用 padding-top: 150%; (3/2*100%) */
+  /* position: relative; */
+  /* padding-top: 150%; */
+}
+
+.card-image {
+  display: block;
+  width: 100%;
+  height: 100%; /* 填满由 aspect-ratio 定义的容器 */
+  object-fit: cover; /* 保持比例裁剪 */
+  border-radius: 0; /* 图片本身不需要圆角，由容器的 overflow 控制 */
+
+  /* 如果使用 padding-top 技巧，需要绝对定位 */
+  /* position: absolute; top: 0; left: 0; */
+}
+
+/* 文字摘要样式 (保持不变或调整) */
+.card-excerpt {
+  width: 100%;
+  height: 100%;
+  padding: 15px;
+  /* ... 其他样式 ... */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* --- 内容区域 --- */
+.card-content {
+  padding: 12px 15px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* --- 标题：最多 2 行，超出省略，行高 1.1em --- */
+.card-title {
+  font-size: 1.1em; /* 标题字体大小 */
+  font-weight: 600;
+  color: #333;
+  line-height: 1.1; /* <-- 设置行高为 1.1 (无单位，表示 1.1 * font-size) */
+                     /* 或者直接用 1.1em 也可以，但无单位通常更好 */
+  margin: 0 0 8px 0;
+  overflow: hidden; /* 隐藏超出部分 */
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* <-- 限制为最多 2 行 */
+  -webkit-box-orient: vertical;
+  /* --- 移除固定的 height 属性 --- */
+  /* height: 2.8em; */ /* <-- 删除或注释掉这一行 */
+  /* 可以设置一个最小高度确保至少一行的高度，但通常不需要 */
+  /* min-height: 1.1em; */
+}
+
+/* --- 作者信息行 (保持不变) --- */
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8em;
+  color: #666;
+  margin-top: auto; /* 推到底部 */
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+/* --- 作者：固定 1 行，超出省略 --- */
+.card-author {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
+.card-date {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
   
-  .article-card:hover {
-    transform: translateY(-3px); /* 悬停时轻微上移 */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  }
+
   
-  /* 取消 Link 的默认下划线 */
-  .card-link {
-    text-decoration: none;
-    color: inherit; /* 继承父元素颜色 */
-    display: flex;
-    flex-direction: column;
-    height: 100%; /* 让链接填满卡片 */
-  }
   
-  .card-image-container {
-    width: 100%;
-    /* --- 控制图片区域宽高比 --- */
-    /* 方法一：使用 padding-top 技巧 (适用于背景图，或需要固定比例) */
-    /* position: relative;
-    padding-top: 133.33%; */ /* 3:4 比例 (4/3 * 100%) */
-    /* padding-top: 177.77%; */ /* 9:16 比例 (16/9 * 100%) */
   
-    /* 方法二：直接给 img 设置 aspect-ratio (现代浏览器支持) */
-    /* 或者给容器设置固定高度 */
-     height: 250px; /* 示例：设置一个固定高度 */
-     overflow: hidden; /* 配合 object-fit 使用 */
-     background-color: #f0f0f0; /* 图片加载时的占位背景色 */
   
-  }
   
-  .card-image {
-    display: block;
-    width: 100%;
-    height: 100%; /* 填满容器高度 */
-    object-fit: cover; /* 保持比例并裁剪填满 */
-    /* 如果使用 aspect-ratio: */
-    /* aspect-ratio: 3 / 4; */ /* 设置宽高比为 3:4 */
-    /* height: auto; */ /* aspect-ratio 时高度设为 auto */
-  }
-  
-  .card-excerpt {
-    height: 250px; /* 与图片容器高度一致 */
-    padding: 15px;
-    font-size: 0.9em;
-    color: #555;
-    overflow: hidden; /* 隐藏多余文字 */
-    display: -webkit-box;
-    -webkit-line-clamp: 8; /* 大致限制行数，需要调整 */
-    -webkit-box-orient: vertical;
-    text-overflow: ellipsis;
-    background-color: #f8f8f8;
-    display: flex; /* 垂直居中 (可选) */
-    align-items: center; /* 垂直居中 (可选) */
-    justify-content: center; /* 水平居中 (可选) */
-    text-align: center; /* 文本居中 (可选) */
-  }
-  
-  .card-content {
-    padding: 15px;
-    flex-grow: 1; /* 让内容区域占据剩余空间 */
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .card-title {
-    font-size: 1.2em; /* 比 meta 文字大 */
-    font-weight: bold;
-    color: #333;
-    margin: 0 0 10px 0; /* 移除默认 margin，设置下边距 */
-    /* 多行标题省略 */
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* 最多显示 2 行 */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-height: 2.4em; /* 预留两行的高度 */
-  }
-  
-  .card-meta {
-    display: flex;
-    justify-content: space-between; /* 让作者和日期分开 */
-    font-size: 0.85em;
-    color: #777;
-    margin-top: auto; /* 将 meta 推到底部 */
-    padding-top: 10px; /* 与标题分隔 */
-    border-top: 1px solid #eee; /* 添加分隔线 */
-  }
-  
-  .card-author {
-    /* 可选样式 */
-  }
-  
-  .card-date {
-    /* 可选样式 */
-    white-space: nowrap; /* 防止日期换行 */
-  }
-  
-  /* (可选) 标签样式 */
-  .card-tags {
-      margin-top: 8px;
-  }
-  .tag {
-      display: inline-block;
-      font-size: 0.75em;
-      padding: 2px 6px;
-      border-radius: 3px;
-      margin-right: 5px;
-      background-color: #e9ecef;
-      color: #495057;
-  }
-  .type-tag {
-      /* background-color: #d1ecf1; */ /* 可以给不同类型不同颜色 */
-      /* color: #0c5460; */
-  }
