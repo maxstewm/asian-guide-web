@@ -10,7 +10,7 @@ import './ArticleListPage.css'; // 复用列表页的网格布局 CSS (如果样
 const asianCountries = [
   { name: 'China', slug: 'china' }, // 假设 slug 是 'china'
   { name: 'Japan', slug: 'japan' },
-  { name: 'South Korea', slug: 'south-korea' },
+  { name: 'South Korea', slug: 'korea' },
   { name: 'Singapore', slug: 'singapore' },
   { name: 'Thailand', slug: 'thailand' },
   { name: 'Vietnam', slug: 'vietnam' },
@@ -28,7 +28,7 @@ function HomePage() {
       try {
         // 获取最新的 10 篇已发布的文章
         const params = {
-          limit: 10,
+          limit: 20,
           sortBy: 'created_at', // 按创建时间排序
           order: 'desc',       // 最新的在前
           status: 'published' // 确保只获取已发布的

@@ -9,7 +9,7 @@ import './ArticleListPage.css'; // 引入列表页 CSS
 const asianCountries = [
   { name: 'China', slug: 'china' },
   { name: 'Japan', slug: 'japan' },
-  { name: 'South Korea', slug: 'south-korea' },
+  { name: 'South Korea', slug: 'korea' },
   { name: 'Singapore', slug: 'singapore' },
   { name: 'Thailand', slug: 'thailand' },
   { name: 'Vietnam', slug: 'vietnam' },
@@ -34,7 +34,7 @@ function ArticleListPage() {
         const params = {
             status: 'published',
             page: currentPage, // 使用当前页码
-            limit: 9 // 例如每页 9 篇
+            limit: 10 // 例如每页 9 篇
         };
         if (countrySlug) {
           params.country = countrySlug; // 如果有国家 slug，添加到参数
