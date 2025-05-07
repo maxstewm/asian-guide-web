@@ -94,15 +94,15 @@
 /* --- 国家导航/频道区域样式 --- */
 .country-channel-section {
   text-align: center; /* 居中标题和导航 */
-  margin: 40px 0; /* 上下边距 */
-  padding: 20px 0;
+  margin: 10px 0; /* 上下边距 */
+  padding: 5px 0;
   border-top: 1px solid #eee;
   border-bottom: 1px solid #eee;
   background-color: #fafafa; /* 浅灰色背景 */
 }
 
 .country-channel-section h2 {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   font-size: 1.8em;
   color: #333;
 }

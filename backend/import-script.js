@@ -14,6 +14,7 @@
   8. 插入文章与用户的关系
   9. 输出导入结果
 */
+//node import-script.js 上传文件路径
 // backend/import-script.js
 const fsPromises = require('fs').promises; // 保留 Promise 版本用于异步操作
 const fs = require('fs'); // 引入标准的、包含同步方法的 fs 模块

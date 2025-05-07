@@ -28,7 +28,7 @@ function HomePage() {
       try {
         // 获取最新的 10 篇已发布的文章
         const params = {
-          limit: 20,
+          limit: 40,
           sortBy: 'created_at', // 按创建时间排序
           order: 'desc',       // 最新的在前
           status: 'published' // 确保只获取已发布的

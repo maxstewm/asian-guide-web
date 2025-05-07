@@ -87,9 +87,9 @@ function ArticleListPage() {
       </nav>
 
       {/* --- 显示当前筛选条件或标题 --- */}
-      <h2 className="list-page-title">
-          {selectedCountry ? `Guides for ${selectedCountry.name}` : 'All Guides'}
-      </h2>
+      {/*<h2 className="list-page-title">*/}
+          {/*{selectedCountry ? `Guides for ${selectedCountry.name}` : 'All Guides'}*/}
+      {/*</h2>*/}
 
       {loading && <div>Loading guides...</div>}
       {error && <div style={{ color: 'red' }}>Error: {error}</div>}
