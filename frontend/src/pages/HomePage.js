@@ -14,6 +14,9 @@ const asianCountries = [
   { name: 'Singapore', slug: 'singapore' },
   { name: 'Thailand', slug: 'thailand' },
   { name: 'Vietnam', slug: 'vietnam' },
+  { name: 'Malaysia', slug: 'malaysia' },
+  { name: 'France', slug: 'france' },
+  { name: 'Britain', slug: 'britain' },
 ];
 
 function HomePage() {

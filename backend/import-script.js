@@ -39,7 +39,7 @@ if (!bucketName) {
 }
 const bucket = storage.bucket(bucketName);
 const USERS_FILE = path.join(__dirname, 'import-users.json'); // 用户信息文件路径
-const DEFAULT_IMPORT_DIR = path.resolve(__dirname, '..', '..', 'import_data'); // 默认导入目录
+const DEFAULT_IMPORT_DIR = path.resolve(__dirname, '..', '..', 'import_dat'); // 默认导入目录
 console.log("Calculated DEFAULT_IMPORT_DIR:", DEFAULT_IMPORT_DIR); // <-- 添加日志
 // --- 全局变量 ---
 let availableUsers = []; // 存储加载的用户信息 [{id, username, email}, ...]
@@ -48,6 +48,8 @@ let processedCount = 0;  // 处理的文件夹总数（尝试处理）
 let skippedCount = 0;    // 因重复、缺少数据或无 .md 文件而跳过的数量
 let successCount = 0;    // 成功导入数据库的文章数量
 let errorCount = 0;      // 处理过程中发生错误的数量
+let successfullyImported = []; // <-- 新增：存储成功导入的文章信息
+let skippedArticles = [];    // <-- 新增：存储跳过的文章及原因
 
 /**
  * 上传本地文件到 Google Cloud Storage
@@ -87,6 +89,9 @@ async function uploadImageToGCS(localPath, articleId, fileName) {
 async function processArticle(articleFolderPath) {
   processedCount++;
   console.log(`\nProcessing article folder: ${articleFolderPath}`);
+  let potentialTitle = path.basename(articleFolderPath); // 预先记录文件夹名作为标题备用
+
+
 
   // 查找目录下的第一个 .md 文件
   let mdFileName = null;
@@ -98,11 +103,14 @@ async function processArticle(articleFolderPath) {
           mdFileName = mdFiles[0]; // 取第一个找到的
       } else {
           console.warn(`  Skipping: No .md file found in ${articleFolderPath}`);
+          skippedArticles.push({ folder: articleFolderPath, reason: 'No .md file found' }); // <-- 记录跳过
+
           skippedCount++;
           return;
       }
   } catch(e) {
       console.error(`  Skipping: Error reading directory ${articleFolderPath}`, e);
+      skippedArticles.push({ folder: articleFolderPath, reason: `Error reading directory: ${e.message}` });
       skippedCount++; // 计入跳过
       errorCount++; // 也计入错误
       return;
@@ -148,11 +156,15 @@ async function processArticle(articleFolderPath) {
       // 检查必要字段
       if (!title || !countryNameOrSlug) {
         console.warn(`  Skipping: Missing 'title' or 'categories' in front matter of ${mdFilePath}`);
+        skippedArticles.push({ title: title || potentialTitle, reason: 'Missing title or categories in front matter' }); // <-- 记录跳过
+
         skippedCount++;
         return;
       }
   } catch(e) {
        console.error(`  Skipping: Error parsing markdown file ${mdFilePath}`, e);
+       skippedArticles.push({ title: potentialTitle, reason: `Error parsing markdown: ${e.message}` }); // <-- 记录跳过
+
        skippedCount++;
        errorCount++;
        return;
@@ -166,11 +178,15 @@ async function processArticle(articleFolderPath) {
       const checkResult = await pool.query(checkQuery, [title]);
       if (checkResult.rows.length > 0) {
           console.log(`  Skipping: Article with title "${title}" already exists (ID: ${checkResult.rows[0].id}).`);
+          skippedArticles.push({ title: title, reason: 'Article with this title already exists' }); // <-- 记录跳过
+
           skippedCount++;
           return;
       }
   } catch (err) {
        console.error(`  Error checking for existing article "${title}":`, err);
+       skippedArticles.push({ title: title, reason: `Database error during duplicate check: ${err.message}` });
+
        errorCount++;
        return; // 无法检查，跳过
   }
@@ -195,6 +211,8 @@ async function processArticle(articleFolderPath) {
   const countryId = countriesMap[countryNameOrSlug?.toLowerCase()] || countriesMap[countryNameOrSlug];
   if (!countryId) {
        console.error(`  Skipping: Country "${countryNameOrSlug}" not found in database map for article: ${title}`);
+       skippedArticles.push({ title: title, reason: `Country '${countryNameOrSlug}' not found in database` }); // <-- 记录跳过
+
        skippedCount++;
        return;
   }
@@ -304,11 +322,15 @@ async function processArticle(articleFolderPath) {
 
     await client.query('COMMIT'); // 提交事务
     console.log(`  Successfully processed and imported article: "${title}"`);
+    successfullyImported.push({ id: articleId, title: title }); // <-- 记录成功导入
+
     successCount++; // 增加成功计数
 
   } catch (err) {
     await client.query('ROLLBACK'); // 出错回滚事务
     console.error(`  Failed to process article "${title}" (Article ID might be ${articleId || 'N/A'}):`, err);
+    skippedArticles.push({ title: title || potentialTitle, reason: `DB error during import: ${err.message}` }); // <-- 记录跳过
+
     errorCount++; // 增加错误计数
     // 可以考虑在这里添加删除已上传图片的逻辑，但会更复杂
   } finally {
@@ -432,7 +454,7 @@ async function runImport() {
   // --- 确保基础目录存在 (这个检查可以保留，或者根据上面的结果调整) ---
   try {
     console.log(`Final check: Attempting to access baseImportDir: ${baseImportDir}`);
-    await fsPromises.access(baseImportDir); // 再次确保用 fsPromises
+    await fsPromises.access(baseImportDir); // 再次确保用 fsPromises 不执行默认目录
     console.log(`Final check: Successfully accessed baseImportDir: ${baseImportDir}`);
  } catch (e) {
      console.error(`Error: Final import directory not found or accessible: ${baseImportDir}. Error: ${e.message}`);
@@ -445,6 +467,30 @@ async function runImport() {
     console.log(`\nStarting import scan from ${baseImportDir}...`);
     await processDirectory(baseImportDir);
 
+    // --- **打印详细列表和最终统计** ---
+    console.log("\n--- Import Details ---");
+
+    // 打印成功列表
+    if (successfullyImported.length > 0) {
+        console.log("\nSuccessfully Imported Articles:");
+        successfullyImported.forEach(article => {
+            console.log(`  - ID: ${article.id}, Title: "${article.title}"`);
+        });
+    } else {
+        console.log("\nNo articles were successfully imported.");
+    }
+
+    // 打印跳过列表
+    if (skippedArticles.length > 0) {
+        console.log("\nSkipped Articles:");
+        skippedArticles.forEach(item => {
+            const identifier = item.title ? `Title: "${item.title}"` : `Folder: ${item.folder}`;
+            console.log(`  - ${identifier}, Reason: ${item.reason}`);
+        });
+    } else {
+        console.log("\nNo articles were skipped.");
+    }
+
     // 打印最终统计
     console.log("\n--- Import Summary ---");
     console.log(`Total potential article folders scanned: ${processedCount}`); // 修改了描述
@@ -452,6 +498,62 @@ async function runImport() {
     console.log(`Skipped (duplicate/missing data/etc):  ${skippedCount}`);
     console.log(`Errors during processing:              ${errorCount}`);
     console.log("----------------------");
+
+
+    // --- **新增：查询并打印各国文章数量统计** ---
+    try {
+      console.log("\n--- Article Count by Country (in DB) ---");
+      const statsQuery = `
+          SELECT
+              c.name AS country_name,
+              COUNT(a.id) as article_count
+          FROM
+              countries c
+          LEFT JOIN
+              articles a ON c.id = a.country_id -- 使用 LEFT JOIN 包含文章数为 0 的国家
+                 AND a.status = 'published'     -- 只统计已发布的文章 (可选)
+          GROUP BY
+              c.id, c.name
+          ORDER BY
+              c.name; -- 按国家名称排序
+      `;
+      const statsResult = await pool.query(statsQuery);
+
+      if (statsResult.rows.length > 0) {
+          statsResult.rows.forEach(row => {
+              console.log(`  - ${row.country_name}: ${row.article_count}`);
+          });
+      } else {
+          console.log("  Could not retrieve country counts or no countries found.");
+      }
+      console.log("------------------------------------------");
+
+  } catch (statsError) {
+      console.error("\nError fetching article count by country:", statsError);
+  }
+  // --- **结束新增统计** ---
+
+  // --- **新增：查询并打印总文章数** ---
+  try {
+    // 只统计已发布的总数 (推荐)
+    const totalPublishedQuery = "SELECT COUNT(*) FROM articles WHERE status = 'published';";
+    const totalPublishedResult = await pool.query(totalPublishedQuery);
+    const totalPublishedCount = parseInt(totalPublishedResult.rows[0].count, 10);
+    console.log(`  - Total Published Articles in DB: ${totalPublishedCount}`);
+
+    // (可选) 统计所有状态的总数
+     const totalAllQuery = "SELECT COUNT(*) FROM articles;";
+     const totalAllResult = await pool.query(totalAllQuery);
+     const totalAllCount = parseInt(totalAllResult.rows[0].count, 10);
+     console.log(`  - Total Articles (All Statuses) in DB: ${totalAllCount}`);
+
+    console.log("------------------------------------------"); // 分隔线放在这里
+
+} catch (totalCountError) {
+    console.error("\nError fetching total article count:", totalCountError);
+     console.log("------------------------------------------"); // 出错也要打印分隔线
+}
+// --- **结束新增总数统计** ---
 
   } catch (err) {
     console.error("\nImport script failed:", err);
