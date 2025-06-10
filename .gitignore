@@ -12,12 +12,16 @@ node_modules/
 logs
 *.log
 *.out
+*.sql_old
+*.js_back0423
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 **/*-debug.log*
 **/*_error.log*
+
+
 
 # Optional diagnostic directories
 .cache

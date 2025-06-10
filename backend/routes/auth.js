@@ -11,7 +11,25 @@ const router = express.Router();
  * 用户注册接口
  * POST /api/auth/register
  * 请求体: { username, email, password }
- */
+ * {
+  "username": "your_desired_username", // String, 必需, 唯一性由数据库保证
+  "email": "user@example.com",        // String, 必需, 唯一性由数据库保证, 有效邮箱格式
+  "password": "your_strong_password"  // String, 必需, 最小长度建议 (例如 6 位)
+  }
+ * 响应:
+ *成功：{
+  "message": "User registered successfully!",
+  "user": {
+    "id": 123, // Number, 新创建用户的 ID
+    "username": "your_desired_username",
+    "email": "user@example.com",
+    "created_at": "2025-04-25T10:30:00.000Z"
+  }
+}
+ * 失败响应:
+ * 400 Bad Request: 缺少必要字段、邮箱格式错误、密码过短、用户名/邮箱已存在。
+ * 500 Internal Server Error: 数据库插入失败等。
+ **/
 router.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -53,6 +71,15 @@ router.post('/register', async (req, res) => {
  * 用户登录接口
  * POST /api/auth/login
  * 请求体: { email, password }
+ * {
+ * "email": "user@example.com",
+ * "password": "your_password"
+ * }
+ * 成功：
+ * {
+ * "message": "Login successful!",
+ * "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTIzLCJ1c2VybmFtZSI6InlvdXJfdXNlcm5hbWUiLCJpYXQiOjE3MTM5OTc4MDAsImV4cCI6MTcxNDYwMjYwMH0.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" // String, JWT 认证令牌
+ * }
  */
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
